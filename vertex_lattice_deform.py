@@ -226,49 +226,59 @@ class VertexLatticeMod:
         return lattice_obj
 
     def create_vert_lattice(lattice_points):
-        if type(lattice_points) is int:
-            lattice_points = (lattice_points, lattice_points, lattice_points)
+        try:
+            if type(lattice_points) is int:
+                lattice_points = (lattice_points, lattice_points, lattice_points)
 
-        # Get the current object
-        obj = bpy.context.scene.objects.active
+            # Get the current object
+            obj = bpy.context.scene.objects.active
 
-        # Create the new vertex group
-        vg = VertexLatticeMod.create_new_vert_group(obj)
+            # Create the new vertex group
+            vg = VertexLatticeMod.create_new_vert_group(obj)
 
-        # Set mode to object
-        bpy.ops.object.mode_set(mode='OBJECT')
+            # Set mode to object
+            bpy.ops.object.mode_set(mode='OBJECT')
 
-        # Get the selected verts
-        verts, vert_ids = VertexLatticeMod.get_selected_verts(obj)
+            # Get the selected verts
+            verts, vert_ids = VertexLatticeMod.get_selected_verts(obj)
 
-        # Add the verts to the vertex group
-        vg.add(vert_ids, 1.0, 'ADD')
+            # Add the verts to the vertex group
+            vg.add(vert_ids, 1.0, 'ADD')
 
-        # Get the min/max for all verts
-        min, max = VertexLatticeMod.get_min_max_from_verts(verts)
+            # Get the min/max for all verts
+            min, max = VertexLatticeMod.get_min_max_from_verts(verts)
 
-        # Create the lattice
-        lattice_obj = VertexLatticeMod.create_lattice_obj(VertexLatticeMod.get_avg_from_min_max(min, max), VertexLatticeMod.get_scale_from_min_max(min, max, lattice_points), lattice_points)
+            # Create the lattice
+            lattice_obj = VertexLatticeMod.create_lattice_obj(VertexLatticeMod.get_avg_from_min_max(min, max), VertexLatticeMod.get_scale_from_min_max(min, max, lattice_points), lattice_points)
 
-        # Create the lattice modifier
-        mod = obj.modifiers.new(lattice_mod_name, 'LATTICE')
-        mod.vertex_group = vg.name
-        mod.object = lattice_obj
+            # Create the lattice modifier
+            mod = obj.modifiers.new(lattice_mod_name, 'LATTICE')
+            mod.vertex_group = vg.name
+            mod.object = lattice_obj
 
-        lattice_obj[lattice_prop_name] = { "object_name": obj.name, "mod_name": mod.name, 'vert_group_name': vg.name }
+            lattice_obj[lattice_prop_name] = { "object_name": obj.name, "mod_name": mod.name, 'vert_group_name': vg.name }
 
-        # Deselect all objects
-        bpy.ops.object.select_all(action='DESELECT')
+            # Deselect all objects
+            bpy.ops.object.select_all(action='DESELECT')
 
-        # Set selected object to lattice
-        lattice_obj.select = True
-        bpy.context.scene.objects.active = lattice_obj
+            # Set selected object to lattice
+            lattice_obj.select = True
+            bpy.context.scene.objects.active = lattice_obj
 
-        # Update the scene
-        bpy.context.scene.update()
+            # Update the scene
+            bpy.context.scene.update()
 
-        # Set mode back to edit
-        bpy.ops.object.mode_set(mode='EDIT')
+        except Exception as err:
+            if bpy.context.object.mode == 'OBJECT':
+                bpy.ops.object.select_all(action='DESELECT')
+                obj.select = True
+                bpy.context.scene.objects.active = obj
+
+            raise Exception(err.args[0])
+
+        finally:
+            # Go back to edit mode
+            bpy.ops.object.mode_set(mode='EDIT')
 
     def is_vert_lattice():
         # Only try if there is an active object
