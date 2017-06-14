@@ -90,6 +90,7 @@ class OBJECT_PT_lattice_deform(bpy.types.Panel):
         row = self.layout.row(align=True)
         row.alignment = 'EXPAND'
 
+        # Standard Buttons
         b2 = row.operator('object.create_lattice_deform', text='2x2x2')
         b3 = row.operator('object.create_lattice_deform', text='3x3x3')
         b4 = row.operator('object.create_lattice_deform', text='4x4x4')
@@ -98,13 +99,14 @@ class OBJECT_PT_lattice_deform(bpy.types.Panel):
         b3.lattice_points = 3
         b4.lattice_points = 4
 
+        # Custom Button
         global vert_lattice_props_u, vert_lattice_props_v, vert_lattice_props_w
 
         vert_lattice_props_u = 2
         vert_lattice_props_v = 2
         vert_lattice_props_w = 2
 
-        cb = self.layout.row().operator('object.custom_lattice_deform', text='Custom')
+        self.layout.row().operator('object.custom_lattice_deform', text='Custom')
 
 class OBJECT_PT_lattice_deform_confirm(bpy.types.Panel):
     bl_category = "Tools"
@@ -116,9 +118,6 @@ class OBJECT_PT_lattice_deform_confirm(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         return VertexLatticeMod.is_vert_lattice()
-
-#    def draw_header(self, context):
-#        self.layout.label(text='', icon='MODIFIER')
 
     def draw(self, context):
         self.layout.row().operator('object.confirm_lattice_deform', text='Apply Deform', icon='FILE_TICK').confirm_lattice = True
@@ -272,7 +271,12 @@ class VertexLatticeMod:
         bpy.ops.object.mode_set(mode='EDIT')
 
     def is_vert_lattice():
-        return lattice_prop_name in bpy.context.scene.objects.active
+        # Only try if there is an active object
+        if bpy.context.scene.objects.active:
+            # It is a vert lattice if the object has props
+            return lattice_prop_name in bpy.context.scene.objects.active
+        else:
+            return False
 
     def apply_vert_lattice():
         try:
@@ -358,14 +362,18 @@ class VertexLatticeMod:
             if not obj_mod:
                 raise Exception('Could not find modifier ' + lattice_props['mod_name'] + ' on ' + obj.name)
 
-            # Delete the Vertex Group
-            obj.vertex_groups.remove(obj_grp)
-
             # Remove the modifier
             obj.modifiers.remove(obj_mod)
 
+            # Delete the Vertex Group
+            obj.vertex_groups.remove(obj_grp)
+
             # Delete the Lattice
             bpy.data.objects.remove(lattice_obj, True)
+
+            # Select and set obj as active
+            obj.select = True
+            bpy.context.scene.objects.active = obj
 
         except Exception as err:
             bpy.ops.object.select_all(action='DESELECT')
