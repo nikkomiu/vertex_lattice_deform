@@ -164,8 +164,8 @@ class VertexLatticeMod:
                 sel_verts.append(vert)
                 sel_vert_ids.append(vert.index)
 
-        if len(sel_verts) <= 0:
-            raise 'OH SNAP'
+        if len(sel_verts) <= 1:
+            raise Exception('Not enough vertices selected. Please select 2 or more verticies')
 
         return sel_verts, sel_vert_ids
 
