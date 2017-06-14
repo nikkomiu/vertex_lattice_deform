@@ -3,7 +3,7 @@ bl_info = {
     'description': 'Adds a menu in the operator panel for quickly creating, applying, and cleaning up vertex lattice deformation modifiers',
     'category': '3D View',
     'author': 'Nikko Miu',
-    'version': (1,0,1),
+    'version': (1,0,2),
     'support': 'COMMUNITY',
     'location': 'View3D > Tools > Vertex Lattice Deform'
 }
@@ -59,9 +59,9 @@ class OBJECT_OT_lattice_deform_custom(bpy.types.Operator):
     bl_idname = 'object.custom_lattice_deform'
     bl_label = 'Custom Size Vertex Lattice Deform'
 
-    u_prop = bpy.props.IntProperty(name='U', min=2, max=64)
-    v_prop = bpy.props.IntProperty(name='V', min=2, max=64)
-    w_prop = bpy.props.IntProperty(name='H', min=2, max=64)
+    u_prop = bpy.props.IntProperty(name='U', min=1, max=64)
+    v_prop = bpy.props.IntProperty(name='V', min=1, max=64)
+    w_prop = bpy.props.IntProperty(name='H', min=1, max=64)
 
     def execute(self, context):
         VertexLatticeMod.create_vert_lattice((self.u_prop, self.v_prop, self.w_prop))
