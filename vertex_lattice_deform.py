@@ -176,20 +176,25 @@ class VertexLatticeMod:
             (min[2] + max[2]) / 2
         ))
 
-    def get_min_max_from_verts(verts):
+    def get_min_max_from_verts(verts, obj):
         max = [-9999999.0, -9999999,0, -9999999.0]
         min = [9999999.0, 9999999.0, 9999999.0]
 
         for vert in verts:
+            world_coord = obj.matrix_world * vert.co
+
             # Check if bigger
-            if vert.co.x > max[0]: max[0] = vert.co.x
-            if vert.co.y > max[1]: max[1] = vert.co.y
-            if vert.co.z > max[2]: max[2] = vert.co.z
+            if world_coord.x > max[0]: max[0] = world_coord.x
+            if world_coord.y > max[1]: max[1] = world_coord.y
+            if world_coord.z > max[2]: max[2] = world_coord.z
 
             # Check if smaller
-            if vert.co.x < min[0]: min[0] = vert.co.x
-            if vert.co.y < min[1]: min[1] = vert.co.y
-            if vert.co.z < min[2]: min[2] = vert.co.z
+            if world_coord.x < min[0]: min[0] = world_coord.x
+            if world_coord.y < min[1]: min[1] = world_coord.y
+            if world_coord.z < min[2]: min[2] = world_coord.z
+
+            print(obj.matrix_world)
+            print(world_coord)
 
         return min, max
 
@@ -246,7 +251,7 @@ class VertexLatticeMod:
             vg.add(vert_ids, 1.0, 'ADD')
 
             # Get the min/max for all verts
-            min, max = VertexLatticeMod.get_min_max_from_verts(verts)
+            min, max = VertexLatticeMod.get_min_max_from_verts(verts, obj)
 
             # Create the lattice
             lattice_obj = VertexLatticeMod.create_lattice_obj(VertexLatticeMod.get_avg_from_min_max(min, max), VertexLatticeMod.get_scale_from_min_max(min, max, lattice_points), lattice_points)
