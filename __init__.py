@@ -26,7 +26,7 @@ bl_info = {
     'description': 'Adds a menu in the operator panel for quickly creating, applying, and cleaning up vertex lattice deformation modifiers',
     'category': '3D View',
     'author': 'Nikko Miu',
-    'version': (1,0,2),
+    'version': (1,0,3),
     'support': 'COMMUNITY',
     'location': 'View3D > Tools > Vertex Lattice Deform'
 }
