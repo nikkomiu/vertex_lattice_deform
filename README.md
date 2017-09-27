@@ -3,13 +3,20 @@
 This Blender Add-on is for making it faster and easier to use the lattice deform
 modifier on vertices, edges, and faces of an object.
 
+## Compatibility
+
+This plugin is known to work with the following versions of Blender:
+
+- 2.79
+- 2.78
+
 ## Installation
 
 1. Download this project to your local computer with the clone or download
     button on this repository
 1. In Blender go to File -> User Preferences... -> Add-ons -> Install From File
 1. Navigate to the location where the repo was downloaded and open the
-    `vertex_lattice_deform.py` file
+    `vertex_lattice_deform.zip` file
 1. Enable the add-on in the list of Installed add-ons
     (it is **3DView: Vertex Lattice Deform** in the list)
 
@@ -27,20 +34,20 @@ in Edit mode on a mesh.
 
 The options in the Add list are:
 
-- **2x2x2:** Creates a lattice object of 2U, 2V, 2W around the vertices
-- **3x3x3:** Creates a lattice object of 3U, 3V, 3W around the vertices
-- **4x4x4:** Creates a lattice object of 3U, 3V, 3W around the vertices
+- **2x2x2:** Creates a lattice object of 2U, 2V, 2W around the selected vertices
+- **3x3x3:** Creates a lattice object of 3U, 3V, 3W around the selected vertices
+- **4x4x4:** Creates a lattice object of 3U, 3V, 3W around the selected vertices
 - **Custom:** Allows you to define a custom U,V,W set (min of 2, max of 64 per
-    axis)
+    axis) for the lattice object that will be placed around the selected vertices
 
-Make sure you have vertices selected before pressing the buttons as it is
+**Note:** Make sure you have vertices selected before pressing the buttons as it is
 designed to work on 2 or more selected vertices in the 3D viewport.
 
 What it does behind the scenes:
 
 1. Creates a vertex group on the current object with the selected vertices (the
-    vertex group that is created is called  Vertex_Lattice and subsequently
-    Vertex_Lattice_001)
+    vertex group that is created is called  **Vertex_Lattice** and subsequently
+    **Vertex_Lattice_001**)
 1. Creates a Lattice object around the vertices that are selected
 1. Adds a Lattice modifier to the object with the vertex group and the lattice
     object
