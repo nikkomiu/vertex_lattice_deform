@@ -7,8 +7,8 @@ modifier on vertices, edges, and faces of an object.
 
 This plugin is known to work with the following versions of Blender:
 
-- 2.79
-- 2.78
+- [2.79](https://github.com/nikkomiu/vertex_lattice_deform/tree/2.7)
+- [2.78](https://github.com/nikkomiu/vertex_lattice_deform/tree/2.7)
 
 ## Installation
 
