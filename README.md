@@ -5,18 +5,18 @@ modifier on vertices, edges, and faces of an object.
 
 ## Compatibility
 
-This plugin is known to work with the following versions of Blender:
+This plugin is known to work with the following versions of Blender (click them to download the correct release version):
 
-- [2.79](https://github.com/nikkomiu/vertex_lattice_deform/tree/2.7)
-- [2.78](https://github.com/nikkomiu/vertex_lattice_deform/tree/2.7)
+- [2.79](https://github.com/nikkomiu/vertex_lattice_deform/archive/2.7.zip)
+- [2.78](https://github.com/nikkomiu/vertex_lattice_deform/archive/2.7.zip)
 
 ## Installation
 
-1. Download this project to your local computer with the clone or download
-    button on this repository
+1. Click the Blender version above that corresponds to the Blender version that
+    you are using to download the zipped release.
 1. In Blender go to File -> User Preferences... -> Add-ons -> Install From File
 1. Navigate to the location where the repo was downloaded and open the
-    `vertex_lattice_deform.zip` file
+    `vertex_lattice_deform-{version}.zip` file
 1. Enable the add-on in the list of Installed add-ons
     (it is **3DView: Vertex Lattice Deform** in the list)
 
