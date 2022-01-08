@@ -21,21 +21,23 @@ bl_info = {
     'description': 'Adds a menu in the operator panel for quickly creating, applying, and cleaning up vertex lattice deformation modifiers',
     'category': '3D View',
     'author': 'Nikko Miu',
-    'version': (1,0,3),
+    'version': (1, 1, 0),
+    'blender': (2, 80, 0),
+    'category': 'Object',
     'support': 'COMMUNITY',
     'location': 'View3D > Tools > Vertex Lattice Deform'
 }
 
 scale_padding = 0.2
 lattice_prop_name = 'vertex_lattice_props'
-lattice_mod_name = 'Vertex_Lattice'
+lattice_mod_name = 'VertexLattice'
 
 class OBJECT_OT_create_lattice_deform(bpy.types.Operator):
     bl_label = "Create Lattice Deform"
     bl_idname = "object.create_lattice_deform"
     bl_description = "Create a new vertex lattice deform on the selected verticies"
 
-    lattice_points = bpy.props.IntProperty(name='Lattice Point')
+    lattice_points: bpy.props.IntProperty(name='Lattice Point')
 
     def execute(self, context):
         try:
@@ -47,20 +49,31 @@ class OBJECT_OT_create_lattice_deform(bpy.types.Operator):
 
             return {'CANCELLED'}
 
-class OBJECT_OT_finish_lattice_deform_confirm(bpy.types.Operator):
+class OBJECT_OT_lattice_deform_custom(bpy.types.Operator):
+    bl_idname = 'object.custom_lattice_deform'
+    bl_label = 'Custom Size'
+
+    u_prop: bpy.props.IntProperty(name='U', min=1, max=128, default=3)
+    v_prop: bpy.props.IntProperty(name='V', min=1, max=128, default=3)
+    w_prop: bpy.props.IntProperty(name='H', min=1, max=128, default=3)
+
+    def execute(self, context):
+        create_vert_lattice((self.u_prop, self.v_prop, self.w_prop))
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+class OBJECT_OT_confirm_lattice_deform(bpy.types.Operator):
     bl_label = "Apply Lattice Deform"
     bl_idname = 'object.confirm_lattice_deform'
-    bl_description = 'Apply the Lattice Deform and remove the vertex group'
-
-    confirm_lattice = bpy.props.BoolProperty(name='Should Confirm the Lattice Deformation')
+    bl_description = 'Apply the deform and remove the associated vertex group'
 
     def execute(self, context):
         try:
             if is_vert_lattice():
-                if self.confirm_lattice:
-                    apply_vert_lattice()
-                else:
-                    cancel_vert_lattice()
+                complete_vert_lattice(True)
             else:
                 raise Exception('Lattice is not vertex lattice modifier')
 
@@ -70,63 +83,52 @@ class OBJECT_OT_finish_lattice_deform_confirm(bpy.types.Operator):
 
             return {'CANCELLED'}
 
-class OBJECT_OT_lattice_deform_custom(bpy.types.Operator):
-    bl_idname = 'object.custom_lattice_deform'
-    bl_label = 'Custom Size Vertex Lattice Deform'
-
-    u_prop = bpy.props.IntProperty(name='U', min=1, max=64)
-    v_prop = bpy.props.IntProperty(name='V', min=1, max=64)
-    w_prop = bpy.props.IntProperty(name='H', min=1, max=64)
+class OBJECT_OT_cancel_lattice_deform(bpy.types.Operator):
+    bl_label = "Cancel Lattice Deform"
+    bl_idname = 'object.cancel_lattice_deform'
+    bl_description = 'Cancel the deform and remove the associated vertex group'
 
     def execute(self, context):
-        create_vert_lattice((self.u_prop, self.v_prop, self.w_prop))
+        try:
+            if is_vert_lattice():
+                complete_vert_lattice(False)
+            else:
+                raise Exception('Lattice is not vertex lattice modifier')
 
-        return {'FINISHED'}
+            return {'FINISHED'}
+        except Exception as err:
+            self.report({'ERROR'}, str(err.args[0]))
 
-    def invoke(self, context, event):
-        global vert_lattice_props_u, vert_lattice_props_v, vert_lattice_props_w
-
-        self.u_prop = vert_lattice_props_u
-        self.v_prop = vert_lattice_props_v
-        self.w_prop = vert_lattice_props_w
-
-        return context.window_manager.invoke_props_dialog(self)
+            return {'CANCELLED'}
 
 class OBJECT_PT_lattice_deform(bpy.types.Panel):
     bl_label = 'Vertex Lattice Deform'
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category = 'Tools'
+    bl_region_type = "UI"
+    bl_category = 'Tool'
     bl_context = 'mesh_edit'
 
     def draw(self, context):
-        self.layout.label('Add:')
-
-        row = self.layout.row(align=True)
-        row.alignment = 'EXPAND'
+        layout = self.layout
 
         # Standard Buttons
-        b2 = row.operator('object.create_lattice_deform', text='2x2x2')
-        b3 = row.operator('object.create_lattice_deform', text='3x3x3')
-        b4 = row.operator('object.create_lattice_deform', text='4x4x4')
+        col = layout.column(align=True)
+        simple = col.grid_flow(columns=3, align=True)
+        b2 = simple.operator(OBJECT_OT_create_lattice_deform.bl_idname, text='2')
+        b3 = simple.operator(OBJECT_OT_create_lattice_deform.bl_idname, text='3')
+        b4 = simple.operator(OBJECT_OT_create_lattice_deform.bl_idname, text='4')
 
         b2.lattice_points = 2
         b3.lattice_points = 3
         b4.lattice_points = 4
 
-        # Custom Button
-        global vert_lattice_props_u, vert_lattice_props_v, vert_lattice_props_w
-
-        vert_lattice_props_u = 2
-        vert_lattice_props_v = 2
-        vert_lattice_props_w = 2
-
-        self.layout.row().operator('object.custom_lattice_deform', text='Custom')
+        advanced = col.grid_flow(columns=1, align=True)
+        advanced.operator(OBJECT_OT_lattice_deform_custom.bl_idname, text='Custom Size')
 
 class OBJECT_PT_lattice_deform_confirm(bpy.types.Panel):
-    bl_category = "Tools"
+    bl_category = "Tool"
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     bl_context = "lattice_edit"
     bl_label = "Vertex Lattice Deform"
 
@@ -135,23 +137,26 @@ class OBJECT_PT_lattice_deform_confirm(bpy.types.Panel):
         return is_vert_lattice()
 
     def draw(self, context):
-        self.layout.row().operator('object.confirm_lattice_deform', text='Apply Deform', icon='FILE_TICK').confirm_lattice = True
-        self.layout.row().operator('object.confirm_lattice_deform', text='Discard Deform', icon='CANCEL').confirm_lattice = False
+        layout = self.layout
+        col = layout.column(align=True)
+        complete_grid = col.grid_flow(columns=2, align=True)
+        complete_grid.operator(OBJECT_OT_confirm_lattice_deform.bl_idname, text='Apply')
+        complete_grid.operator(OBJECT_OT_cancel_lattice_deform.bl_idname, text='Cancel')
 
 def get_new_vert_group_name(obj):
-    vg_name = 'Vertex_Lattice'
+    vg_name = 'VertexLattice'
 
-    # Try to create the default Group with just Vertex_Lattice
+    # Try to create the default Group with just VertexLattice
     vg = obj.vertex_groups.get(vg_name)
 
-    # If the default Vertex_Lattice group doesn't exist use that
+    # If the default VertexLattice group doesn't exist use that
     if vg is None:
         return vg_name
 
     iter = 1
     out_name = None
 
-    # Create the Vertex_Lattice_XXX group
+    # Create the VertexLattice_XXX group
     while out_name is None:
         tmp_name = vg_name + '_' + str(iter).zfill(3)
 
@@ -195,7 +200,7 @@ def get_min_max_from_verts(verts, obj):
     min = [9999999.0, 9999999.0, 9999999.0]
 
     for vert in verts:
-        world_coord = obj.matrix_world * vert.co
+        world_coord = obj.matrix_world @ vert.co
 
         # Check if bigger
         if world_coord.x > max[0]: max[0] = world_coord.x
@@ -240,9 +245,17 @@ def create_lattice_obj(loc, scale, lattice_points):
     lattice_obj.location = loc
     lattice_obj.scale = scale
 
-    bpy.context.scene.objects.link(lattice_obj)
+    bpy.context.scene.collection.objects.link(lattice_obj)
 
     return lattice_obj
+
+def is_vert_lattice():
+    # Only try if there is an active object
+    if bpy.context.view_layer.objects.active:
+        # It is a vert lattice if the object has props
+        return lattice_prop_name in bpy.context.view_layer.objects.active
+    else:
+        return False
 
 def create_vert_lattice(lattice_points):
     try:
@@ -250,7 +263,7 @@ def create_vert_lattice(lattice_points):
             lattice_points = (lattice_points, lattice_points, lattice_points)
 
         # Get the current object
-        obj = bpy.context.scene.objects.active
+        obj = bpy.context.view_layer.objects.active
 
         # Create the new vertex group
         vg = create_new_vert_group(obj)
@@ -281,17 +294,17 @@ def create_vert_lattice(lattice_points):
         bpy.ops.object.select_all(action='DESELECT')
 
         # Set selected object to lattice
-        lattice_obj.select = True
-        bpy.context.scene.objects.active = lattice_obj
+        lattice_obj.select_set(state=True)
+        bpy.context.view_layer.objects.active = lattice_obj
 
         # Update the scene
-        bpy.context.scene.update()
+        bpy.context.view_layer.update()
 
     except Exception as err:
         if bpy.context.object.mode == 'OBJECT':
             bpy.ops.object.select_all(action='DESELECT')
-            obj.select = True
-            bpy.context.scene.objects.active = obj
+            obj.select_set(state=True)
+            bpy.context.view_layer.objects.active = obj
 
         raise Exception(err.args[0])
 
@@ -299,17 +312,9 @@ def create_vert_lattice(lattice_points):
         # Go back to edit mode
         bpy.ops.object.mode_set(mode='EDIT')
 
-def is_vert_lattice():
-    # Only try if there is an active object
-    if bpy.context.scene.objects.active:
-        # It is a vert lattice if the object has props
-        return lattice_prop_name in bpy.context.scene.objects.active
-    else:
-        return False
-
-def apply_vert_lattice():
+def complete_vert_lattice(apply):
     try:
-        lattice_obj = bpy.context.scene.objects.active
+        lattice_obj = bpy.context.view_layer.objects.active
 
         # Stop execution if the object doesn't have lattice props
         if not lattice_prop_name in lattice_obj:
@@ -330,8 +335,8 @@ def apply_vert_lattice():
         bpy.ops.object.select_all(action='DESELECT')
 
         # Select and set obj as active
-        obj.select = True
-        bpy.context.scene.objects.active = obj
+        obj.select_set(state=True)
+        bpy.context.view_layer.objects.active = obj
 
         # Check that modifier exists
         if not lattice_props['mod_name'] in obj.modifiers:
@@ -339,75 +344,32 @@ def apply_vert_lattice():
 
         # Get the vertex group on the object
         obj_grp = obj.vertex_groups.get(lattice_props['vert_group_name'])
-        if not obj_grp:
+        if obj_grp is None:
             raise Exception('Could not find vertex group ' + lattice_props['vert_group_name'] + ' on ' + obj.name)
 
         # Apply Modifier
-        bpy.ops.object.modifier_apply(modifier=lattice_props['mod_name'])
+        if apply:
+            bpy.ops.object.modifier_apply(modifier=lattice_props['mod_name'])
+        else:
+            obj_mod = obj.modifiers.get(lattice_props['mod_name'])
+            obj.modifiers.remove(obj_mod)
 
         # Delete the Vertex Group
-        obj.vertex_groups.remove(obj_grp)
+        bpy.ops.object.vertex_group_set_active(group=obj_grp.name)
+        bpy.ops.object.vertex_group_remove()
 
         # Delete the Lattice
-        bpy.data.objects.remove(lattice_obj, True)
+        bpy.ops.object.select_all(action='DESELECT')
+        lattice_obj.select_set(state=True)
+        bpy.ops.object.delete()
+        
+        obj.select_set(state=True)
+        bpy.context.view_layer.objects.active = obj
 
     except Exception as err:
         bpy.ops.object.select_all(action='DESELECT')
-        lattice_obj.select = True
-        bpy.context.scene.objects.active = lattice_obj
-
-        raise Exception(err.args[0])
-
-    finally:
-        # Go back to edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
-
-def cancel_vert_lattice():
-    try:
-        lattice_obj = bpy.context.scene.objects.active
-
-        # Stop execution if the object doesn't have lattice props
-        if not lattice_prop_name in lattice_obj:
-            raise Exception('Object does not have required vertex lattice deform props')
-
-        lattice_props = lattice_obj[lattice_prop_name]
-
-        # Set mode to object
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        # Make sure the target object exists
-        if not lattice_props['object_name'] in bpy.data.objects:
-            raise Exception('Object not found, ensure the object exists and is named ' + lattice_props['object_name'])
-
-        obj = bpy.data.objects[lattice_props['object_name']]
-
-        # Get the vertex group
-        obj_grp = obj.vertex_groups.get(lattice_props['vert_group_name'])
-        if not obj_grp:
-            raise Exception('Could not find vertex group ' + lattice_props['vert_group_name'] + ' on ' + obj.name)
-
-        # Delete the Modifier
-        obj_mod = obj.modifiers.get(lattice_props['mod_name'])
-        if not obj_mod:
-            raise Exception('Could not find modifier ' + lattice_props['mod_name'] + ' on ' + obj.name)
-
-        # Remove the modifier
-        obj.modifiers.remove(obj_mod)
-
-        # Delete the Vertex Group
-        obj.vertex_groups.remove(obj_grp)
-
-        # Delete the Lattice
-        bpy.data.objects.remove(lattice_obj, True)
-
-        # Select and set obj as active
-        obj.select = True
-        bpy.context.scene.objects.active = obj
-
-    except Exception as err:
-        bpy.ops.object.select_all(action='DESELECT')
-        lattice_obj.select = True
-        bpy.context.scene.objects.active = lattice_obj
+        lattice_obj.select_set(state=True)
+        bpy.context.view_layer.objects.active = lattice_obj
 
         raise Exception(err.args[0])
 
@@ -417,14 +379,16 @@ def cancel_vert_lattice():
 
 def register():
     bpy.utils.register_class(OBJECT_OT_create_lattice_deform)
-    bpy.utils.register_class(OBJECT_OT_finish_lattice_deform_confirm)
+    bpy.utils.register_class(OBJECT_OT_confirm_lattice_deform)
+    bpy.utils.register_class(OBJECT_OT_cancel_lattice_deform)
     bpy.utils.register_class(OBJECT_OT_lattice_deform_custom)
     bpy.utils.register_class(OBJECT_PT_lattice_deform)
     bpy.utils.register_class(OBJECT_PT_lattice_deform_confirm)
 
 def unregister():
     bpy.utils.unregister_class(OBJECT_OT_create_lattice_deform)
-    bpy.utils.unregister_class(OBJECT_OT_finish_lattice_deform_confirm)
+    bpy.utils.unregister_class(OBJECT_OT_confirm_lattice_deform)
+    bpy.utils.unregister_class(OBJECT_OT_cancel_lattice_deform)
     bpy.utils.unregister_class(OBJECT_OT_lattice_deform_custom)
     bpy.utils.unregister_class(OBJECT_PT_lattice_deform)
     bpy.utils.unregister_class(OBJECT_PT_lattice_deform_confirm)
